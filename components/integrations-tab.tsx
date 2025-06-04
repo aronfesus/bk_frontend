@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Facebook, Twitter, Instagram, Linkedin, MessageSquare, Globe, AlertCircle, CheckCircle } from "lucide-react"
@@ -17,6 +17,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+
+// Declare FB and fbAsyncInit on window for TypeScript
+declare global {
+  interface Window {
+    FB: any; // You might want to install @types/facebook-js-sdk for better typing
+    fbAsyncInit?: () => void;
+    checkLoginState?: () => void; // For the onlogin callback
+  }
+}
 
 interface Integration {
   id: string
@@ -37,9 +46,9 @@ const initialIntegrations: Integration[] = [
     description: "Facebook Messenger integrációja",
     icon: Facebook,
     color: "bg-blue-600",
-    connected: true,
-    account: "Biztos Kész Kft.",
-    lastSync: "2 hours ago",
+    connected: false,
+    account: null,
+    lastSync: null,
   },
   {
     id: "website",
@@ -59,6 +68,74 @@ export function IntegrationsTab() {
   const [connectingIntegration, setConnectingIntegration] = useState<string | null>(null)
   const [accountName, setAccountName] = useState("")
   const [showWebsiteCode, setShowWebsiteCode] = useState(false)
+
+  const statusChangeCallback = useCallback((response: any) => {
+    console.log('statusChangeCallback response:', response);
+    if (response.status === 'connected') {
+      setIntegrations(prevIntegrations =>
+        prevIntegrations.map(integ =>
+          integ.id === 'facebook'
+            ? {
+                ...integ,
+                connected: true,
+                account: `User ID: ${response.authResponse.userID}`, // Placeholder, ideally page name
+                lastSync: 'Just now',
+              }
+            : integ
+        )
+      );
+      console.log('Facebook connected. AuthResponse:', response.authResponse);
+      // In a real app, use response.authResponse.accessToken to fetch pages:
+      // window.FB.api('/me/accounts', function(pageResponse: any) {
+      //   console.log('User pages:', pageResponse);
+      //   if (pageResponse && !pageResponse.error && pageResponse.data && pageResponse.data.length > 0) {
+      //     const firstPage = pageResponse.data[0]; // Let user choose in real app
+      //     setIntegrations(prev => prev.map(i => i.id === 'facebook' ? {...i, account: firstPage.name } : i));
+      //   }
+      // });
+    } else {
+      console.log('Facebook not connected or not authorized.');
+      setIntegrations(prevIntegrations =>
+        prevIntegrations.map(integ =>
+          integ.id === 'facebook' ? { ...integ, connected: false, account: null, lastSync: null } : integ
+        )
+      );
+    }
+  }, [setIntegrations]);
+
+  const checkLoginState = useCallback(() => {
+    if (window.FB) {
+      window.FB.getLoginStatus(function(response: any) {
+        statusChangeCallback(response);
+      });
+    } else {
+      console.error("Facebook SDK not loaded or FB object not available on window.");
+    }
+  }, [statusChangeCallback]);
+
+  useEffect(() => {
+    // Make checkLoginState globally available for the fb-login-button's onlogin attribute
+    window.checkLoginState = checkLoginState;
+
+    // Attempt to parse XFBML in case the component rendered after initial SDK load/parse
+    // The xfbml:true in FB.init (layout.tsx) should handle initial load,
+    // but this is a fallback or for dynamic additions.
+    if (window.FB && window.FB.XFBML) {
+      try {
+        window.FB.XFBML.parse();
+        console.log("FB.XFBML.parse() called from IntegrationsTab");
+      } catch (e) {
+        console.error("Error calling FB.XFBML.parse():", e);
+      }
+    }
+
+    return () => {
+      // Cleanup: remove the global function if this component instance created it
+      if (window.checkLoginState === checkLoginState) {
+        delete window.checkLoginState;
+      }
+    };
+  }, [checkLoginState]);
 
   const toggleIntegration = (id: string) => {
     setIntegrations(
@@ -134,38 +211,92 @@ export function IntegrationsTab() {
               )}
             </CardContent>
             <CardFooter className="flex justify-between border-t px-6 py-3">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id={`integration-${integration.id}`}
-                  checked={integration.connected}
-                  onCheckedChange={() => {
-                    if (!integration.connected) {
-                      handleConnect(integration.id)
-                    } else {
-                      toggleIntegration(integration.id)
-                    }
-                  }}
-                />
-                <Label htmlFor={`integration-${integration.id}`}>
-                  {integration.connected ? "Engedélyezve" : "Letiltva"}
-                </Label>
-              </div>
-              {integration.connected ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (integration.id === "website") {
-                      setShowWebsiteCode(true)
-                    }
-                  }}
-                >
-                  Konfigurálás
-                </Button>
+              {integration.id === 'facebook' ? (
+                <>
+                  {integration.connected ? (
+                    <div className="flex w-full flex-col items-start space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id={`integration-${integration.id}`}
+                          checked={true}
+                          onCheckedChange={() => {
+                            // Disconnect Facebook integration
+                            console.log('Disconnecting Facebook integration');
+                            // Optional: Call FB.logout() if you want to log the user out of FB for your app
+                            // FB.logout(function(response) { statusChangeCallback(response); });
+                            // For page integration, just updating app state might be enough
+                            setIntegrations(prev =>
+                              prev.map(i =>
+                                i.id === 'facebook'
+                                  ? { ...i, connected: false, account: null, lastSync: null }
+                                  : i,
+                              ),
+                            );
+                          }}
+                        />
+                        <Label htmlFor={`integration-${integration.id}`}>Engedélyezve</Label>
+                      </div>
+                      {/* Optionally, a configure button if needed after connection */}
+                      {/* <Button variant="outline" size="sm">Konfigurálás</Button> */}
+                    </div>
+                  ) : (
+                    <div className="flex w-full items-center justify-between">
+                       <div className="flex items-center space-x-2">
+                          <Switch
+                              id={`integration-${integration.id}`}
+                              checked={false}
+                              disabled // The switch itself doesn't trigger connection for FB
+                          />
+                          <Label htmlFor={`integration-${integration.id}`}>Letiltva</Label>
+                      </div>
+                      <div
+                        className="fb-login-button"
+                        data-size="medium"
+                        data-button-type="continue_with"
+                        data-use-continue-as="true"
+                        data-scope="public_profile,email,pages_show_list,pages_messaging"
+                        data-onlogin="checkLoginState();"
+                      ></div>
+                    </div>
+                  )}
+                </>
               ) : (
-                <Button size="sm" onClick={() => handleConnect(integration.id)}>
-                  Connect
-                </Button>
+                <>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id={`integration-${integration.id}`}
+                      checked={integration.connected}
+                      onCheckedChange={() => {
+                        if (!integration.connected) {
+                          handleConnect(integration.id);
+                        } else {
+                          toggleIntegration(integration.id);
+                        }
+                      }}
+                    />
+                    <Label htmlFor={`integration-${integration.id}`}>
+                      {integration.connected ? "Engedélyezve" : "Letiltva"}
+                    </Label>
+                  </div>
+                  {integration.connected ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (integration.id === "website") {
+                          setShowWebsiteCode(true);
+                        }
+                        // Add other configuration actions here if needed
+                      }}
+                    >
+                      Konfigurálás
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => handleConnect(integration.id)}>
+                      Connect
+                    </Button>
+                  )}
+                </>
               )}
             </CardFooter>
           </Card>
