@@ -15,6 +15,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 
@@ -23,7 +24,7 @@ declare global {
   interface Window {
     FB: any; // You might want to install @types/facebook-js-sdk for better typing
     fbAsyncInit?: () => void;
-    checkLoginState?: () => void; // For the onlogin callback
+    // window.checkLoginState is no longer used by this component
   }
 }
 
@@ -36,6 +37,14 @@ interface Integration {
   connected: boolean
   account: string | null
   lastSync: string | null
+}
+
+interface ManageablePage {
+  id: string;
+  name: string;
+  accessToken: string; // Long-lived Page Access Token
+  category: string;
+  // tasks: string[]; // tasks might not be needed for client-side display initially
 }
 
 // Mock data for integrations
@@ -69,73 +78,145 @@ export function IntegrationsTab() {
   const [accountName, setAccountName] = useState("")
   const [showWebsiteCode, setShowWebsiteCode] = useState(false)
 
-  const statusChangeCallback = useCallback((response: any) => {
-    console.log('statusChangeCallback response:', response);
-    if (response.status === 'connected') {
-      setIntegrations(prevIntegrations =>
-        prevIntegrations.map(integ =>
-          integ.id === 'facebook'
-            ? {
-                ...integ,
-                connected: true,
-                account: `User ID: ${response.authResponse.userID}`, // Placeholder, ideally page name
-                lastSync: 'Just now',
-              }
-            : integ
-        )
-      );
-      console.log('Facebook connected. AuthResponse:', response.authResponse);
-      // In a real app, use response.authResponse.accessToken to fetch pages:
-      // window.FB.api('/me/accounts', function(pageResponse: any) {
-      //   console.log('User pages:', pageResponse);
-      //   if (pageResponse && !pageResponse.error && pageResponse.data && pageResponse.data.length > 0) {
-      //     const firstPage = pageResponse.data[0]; // Let user choose in real app
-      //     setIntegrations(prev => prev.map(i => i.id === 'facebook' ? {...i, account: firstPage.name } : i));
-      //   }
-      // });
+  const [manageablePages, setManageablePages] = useState<ManageablePage[]>([]);
+  const [showPageSelectionDialog, setShowPageSelectionDialog] = useState(false);
+  const [isFacebookConnecting, setIsFacebookConnecting] = useState(false);
+  const [facebookError, setFacebookError] = useState<string | null>(null);
+
+  const statusChangeCallback = useCallback(async (response: any) => {
+    console.log('statusChangeCallback invoked. Response:', response);
+    // Note: setIsFacebookConnecting(false) is handled by the caller (handleFacebookLoginAttempt) 
+    // or in the finally block of the connected path if login was successful initially.
+
+    if (response.status === 'connected' && response.authResponse) {
+      // This setIsFacebookConnecting(true) is for the API calls part, not the FB.login part.
+      setIsFacebookConnecting(true); 
+      setFacebookError(null); // Clear previous errors if we are now connected.
+      const { userID: facebookUserId, accessToken: shortLivedUserAccessToken, grantedScopes } = response.authResponse;
+      console.log('Facebook user connected to app. User ID:', facebookUserId, 'Granted Scopes:', grantedScopes);
+
+      try {
+        const apiRes = await fetch('/api/facebook/get-manageable-pages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ facebookUserId, shortLivedUserAccessToken }),
+        });
+        const data = await apiRes.json();
+        if (!apiRes.ok) {
+          throw new Error(data.message || data.error || 'Failed to fetch manageable pages');
+        }
+        if (data.pages && data.pages.length > 0) {
+          if (!grantedScopes || !grantedScopes.includes('pages_show_list')) {
+             console.warn('Successfully fetched pages, but pages_show_list was not in grantedScopes. This might be unexpected.', grantedScopes);
+          }
+          setManageablePages(data.pages);
+          setShowPageSelectionDialog(true);
+        } else {
+          let noPagesMessage = 'No manageable Facebook Pages found for your account.';
+          if (!grantedScopes || !grantedScopes.includes('pages_show_list')) {
+            noPagesMessage = 'The required permission (pages_show_list) to view your pages was not granted. Please try connecting again and ensure you approve this permission.';
+          }
+          setFacebookError(noPagesMessage);
+          setIntegrations(prev => prev.map(i => i.id === 'facebook' ? {...i, connected: false, account: 'No pages found', lastSync: 'Just now' } : i));
+        }
+      } catch (error: any) {
+        console.error('Error fetching/processing manageable pages:', error);
+        setFacebookError(error.message || 'An unexpected error occurred while fetching pages.');
+        setIntegrations(prev => prev.map(i => i.id === 'facebook' ? { ...i, connected: false, account: null, lastSync: null } : i));
+      } finally {
+        // This finally block specifically handles the API call phase after a successful FB connection.
+        setIsFacebookConnecting(false);
+      }
     } else {
-      console.log('Facebook not connected or not authorized.');
+      console.log('Facebook login status not \'connected\'. Status:', response.status);
+      let errMsg = 'Could not connect to Facebook.';
+      if (response.status === 'not_authorized') {
+        errMsg = 'App authorization declined. Please accept the permissions to connect.';
+      } else if (response.status === 'unknown') {
+        errMsg = 'Not logged into Facebook or connection cancelled.';
+      }
+      if (response.error) { // Check if FB.login itself returned an error
+        errMsg = `Facebook login error: ${response.error.message || response.error}`;
+      }
+      setFacebookError(errMsg);
       setIntegrations(prevIntegrations =>
         prevIntegrations.map(integ =>
           integ.id === 'facebook' ? { ...integ, connected: false, account: null, lastSync: null } : integ
         )
       );
+      // setIsFacebookConnecting(false) is handled by the calling function (handleFacebookLoginAttempt)
+      // if this 'else' block is reached after an FB.login() call.
     }
-  }, [setIntegrations]);
+  }, [setIntegrations, setManageablePages, setShowPageSelectionDialog, setIsFacebookConnecting, setFacebookError]);
 
-  const checkLoginState = useCallback(() => {
-    if (window.FB) {
-      window.FB.getLoginStatus(function(response: any) {
-        statusChangeCallback(response);
-      });
-    } else {
+  const handleFacebookLoginAttempt = useCallback(() => {
+    if (!window.FB) {
       console.error("Facebook SDK not loaded or FB object not available on window.");
-    }
-  }, [statusChangeCallback]);
-
-  useEffect(() => {
-    // Make checkLoginState globally available for the fb-login-button's onlogin attribute
-    window.checkLoginState = checkLoginState;
-
-    // Attempt to parse XFBML in case the component rendered after initial SDK load/parse
-    // The xfbml:true in FB.init (layout.tsx) should handle initial load,
-    // but this is a fallback or for dynamic additions.
-    if (window.FB && window.FB.XFBML) {
-      try {
-        window.FB.XFBML.parse();
-        console.log("FB.XFBML.parse() called from IntegrationsTab");
-      } catch (e) {
-        console.error("Error calling FB.XFBML.parse():", e);
-      }
+      setFacebookError("Facebook SDK failed to load. Please refresh the page.");
+      return;
     }
 
-    return () => {
-      // Cleanup: remove the global function if this component instance created it
-      if (window.checkLoginState === checkLoginState) {
-        delete window.checkLoginState;
+    setIsFacebookConnecting(true);
+    setFacebookError(null);
+
+    window.FB.getLoginStatus(function(response: any) {
+      if (response.status === 'connected') {
+        console.log('FB.getLoginStatus: Already connected. Proceeding with statusChangeCallback.');
+        // statusChangeCallback will set isFacebookConnecting to false in its finally block after API calls.
+        statusChangeCallback(response);
+      } else {
+        console.log('FB.getLoginStatus: Not connected. Status:', response.status, 'Attempting FB.login().');
+        window.FB.login(function(loginResponse: any) {
+          // statusChangeCallback will handle the loginResponse.
+          statusChangeCallback(loginResponse);
+          // If login was not successful (e.g., cancelled), statusChangeCallback's 'else' block runs.
+          // We need to ensure isFacebookConnecting is reset if the connected path in statusChangeCallback is not hit.
+          if (loginResponse.status !== 'connected') {
+            setIsFacebookConnecting(false);
+          }
+        }, {
+          scope: 'public_profile,email,pages_show_list,pages_messaging',
+          return_scopes: true // To check granted scopes later
+        });
       }
-    };
-  }, [checkLoginState]);
+    });
+  }, [statusChangeCallback, setIsFacebookConnecting, setFacebookError]);
+
+  const handleConnectPage = async (page: ManageablePage) => {
+    setIsFacebookConnecting(true);
+    setFacebookError(null);
+    try {
+      const apiRes = await fetch('/api/facebook/store-page-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          pageId: page.id, 
+          pageName: page.name, 
+          pageAccessToken: page.accessToken 
+        }),
+      });
+
+      const data = await apiRes.json();
+
+      if (!apiRes.ok) {
+        throw new Error(data.message || data.error || 'Failed to store page token');
+      }
+
+      setIntegrations(prev => prev.map(i => 
+        i.id === 'facebook' 
+          ? { ...i, connected: true, account: page.name, lastSync: 'Just now' } 
+          : i
+      ));
+      setShowPageSelectionDialog(false);
+      console.log('Successfully connected page:', page.name);
+
+    } catch (error: any) {
+      console.error('Error storing page token:', error);
+      setFacebookError(error.message || 'An error occurred while connecting the page.');
+    } finally {
+      setIsFacebookConnecting(false);
+    }
+  };
 
   const toggleIntegration = (id: string) => {
     setIntegrations(
@@ -172,12 +253,26 @@ export function IntegrationsTab() {
     return integrations.find((integration) => integration.id === id)
   }
 
+  useEffect(() => {
+    // This useEffect is intentionally kept minimal. If FB.XFBML.parse() is needed for other
+    // dynamic XFBML content, it should be handled carefully, ensuring FB SDK is loaded.
+    // For the login button, we are not using XFBML anymore.
+  }, []);
+
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Integrációk</h2>
         <p className="text-muted-foreground">Csatlakoztassa a következő platformokat a chatbottal való interakcióhoz</p>
       </div>
+
+      {facebookError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Facebook Integration Error</AlertTitle>
+          <AlertDescription>{facebookError}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {integrations.map((integration) => (
@@ -197,7 +292,7 @@ export function IntegrationsTab() {
             </CardHeader>
             <CardContent>
               <CardDescription className="mb-4">{integration.description}</CardDescription>
-              {integration.connected && (
+              {integration.connected && integration.account && (
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Fiók:</span>
@@ -220,11 +315,7 @@ export function IntegrationsTab() {
                           id={`integration-${integration.id}`}
                           checked={true}
                           onCheckedChange={() => {
-                            // Disconnect Facebook integration
                             console.log('Disconnecting Facebook integration');
-                            // Optional: Call FB.logout() if you want to log the user out of FB for your app
-                            // FB.logout(function(response) { statusChangeCallback(response); });
-                            // For page integration, just updating app state might be enough
                             setIntegrations(prev =>
                               prev.map(i =>
                                 i.id === 'facebook'
@@ -232,12 +323,11 @@ export function IntegrationsTab() {
                                   : i,
                               ),
                             );
+                            setFacebookError(null);
                           }}
                         />
                         <Label htmlFor={`integration-${integration.id}`}>Engedélyezve</Label>
                       </div>
-                      {/* Optionally, a configure button if needed after connection */}
-                      {/* <Button variant="outline" size="sm">Konfigurálás</Button> */}
                     </div>
                   ) : (
                     <div className="flex w-full items-center justify-between">
@@ -245,18 +335,17 @@ export function IntegrationsTab() {
                           <Switch
                               id={`integration-${integration.id}`}
                               checked={false}
-                              disabled // The switch itself doesn't trigger connection for FB
+                              disabled 
                           />
                           <Label htmlFor={`integration-${integration.id}`}>Letiltva</Label>
                       </div>
-                      <div
-                        className="fb-login-button"
-                        data-size="medium"
-                        data-button-type="continue_with"
-                        data-use-continue-as="true"
-                        data-scope="public_profile,email,pages_show_list,pages_messaging"
-                        data-onlogin="checkLoginState();"
-                      ></div>
+                      <Button 
+                        onClick={handleFacebookLoginAttempt}
+                        disabled={isFacebookConnecting}
+                        size="sm"
+                      >
+                        {isFacebookConnecting ? 'Csatlakozás...' : 'Connect with Facebook'}
+                      </Button>
                     </div>
                   )}
                 </>
@@ -286,7 +375,6 @@ export function IntegrationsTab() {
                         if (integration.id === "website") {
                           setShowWebsiteCode(true);
                         }
-                        // Add other configuration actions here if needed
                       }}
                     >
                       Konfigurálás
@@ -333,6 +421,39 @@ export function IntegrationsTab() {
               Cancel
             </Button>
             <Button onClick={confirmConnect}>Connect Account</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPageSelectionDialog} onOpenChange={setShowPageSelectionDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Facebook Page to Connect</DialogTitle>
+            <DialogDescription>
+              Choose which Facebook Page you want to integrate for Messenger.
+            </DialogDescription>
+          </DialogHeader>
+          {manageablePages.length > 0 ? (
+            <div className="space-y-2 py-4 max-h-60 overflow-y-auto">
+              {manageablePages.map((page) => (
+                <Button 
+                  key={page.id} 
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => handleConnectPage(page)}
+                  disabled={isFacebookConnecting}
+                >
+                  {page.name} ({page.category})
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <p className="py-4 text-sm text-muted-foreground">No pages found to select.</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPageSelectionDialog(false)} disabled={isFacebookConnecting}>
+              Cancel
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -55,7 +55,7 @@ export default function RootLayout({
                   appId      : '1424159448564691',
                   cookie     : true,
                   xfbml      : true,
-                  version    : 'v19.0'
+                  version    : 'v21.0'
                 });
                 
                 FB.AppEvents.logPageView();   
