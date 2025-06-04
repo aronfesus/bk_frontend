@@ -18,8 +18,19 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 
+interface Integration {
+  id: string
+  name: string
+  description: string
+  icon: any // Using any for the icon type to keep it simple
+  color: string
+  connected: boolean
+  account: string | null
+  lastSync: string | null
+}
+
 // Mock data for integrations
-const initialIntegrations = [
+const initialIntegrations: Integration[] = [
   {
     id: "facebook",
     name: "Facebook",
@@ -43,7 +54,7 @@ const initialIntegrations = [
 ]
 
 export function IntegrationsTab() {
-  const [integrations, setIntegrations] = useState(initialIntegrations)
+  const [integrations, setIntegrations] = useState<Integration[]>(initialIntegrations)
   const [showConnectDialog, setShowConnectDialog] = useState(false)
   const [connectingIntegration, setConnectingIntegration] = useState<string | null>(null)
   const [accountName, setAccountName] = useState("")
@@ -102,7 +113,7 @@ export function IntegrationsTab() {
                   </div>
                   <CardTitle className="text-xl">{integration.name}</CardTitle>
                 </div>
-                <Badge variant={integration.connected ? "default" : "outline"}>
+                <Badge variant={integration.connected ? "default" : "secondary"}>
                   {integration.connected ? "Sikeresen csatlakoztatva" : "Nincs csatlakoztatva"}
                 </Badge>
               </div>
@@ -179,7 +190,7 @@ export function IntegrationsTab() {
                 onChange={(e) => setAccountName(e.target.value)}
               />
             </div>
-            <Alert variant="outline" className="bg-muted">
+            <Alert variant="default" className="bg-muted">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 In a real application, this would redirect you to authenticate with the service.
