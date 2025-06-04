@@ -11,7 +11,7 @@ export const pageTokensApi = {
   async createPageAccessToken(tokenData: CreatePageAccessTokenInput): Promise<PageAccessToken> {
     console.log('Creating page access token:', tokenData.pageId);
     try {
-      const response = await fetch(`${API_BASE_URL}/page-access-tokens/`, {
+      const response = await fetch(`${API_BASE_URL}/page_access_tokens/`, {
         method: "POST",
         headers: defaultHeaders,
         credentials: "include",
@@ -44,7 +44,7 @@ export const pageTokensApi = {
   async getPageAccessTokens(): Promise<PageAccessToken[]> {
     console.log('Fetching page access tokens');
     try {
-      const response = await fetch(`${API_BASE_URL}/page-access-tokens/`, {
+      const response = await fetch(`${API_BASE_URL}/page_access_tokens/`, {
         credentials: "include",
         headers: defaultHeaders,
       });
