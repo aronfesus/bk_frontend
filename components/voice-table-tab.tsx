@@ -144,7 +144,7 @@ export function VoiceTableTab() {
 
   // Table cell helpers
   function renderDirection(direction: string) {
-    if (direction === "Incoming") return <Badge variant="secondary" className="text-blue-600"><Phone className="inline h-4 w-4 mr-1" />Bejövő</Badge>
+    if (direction === "inbound") return <Badge variant="secondary" className="text-blue-600"><Phone className="inline h-4 w-4 mr-1" />Bejövő</Badge>
     if (direction === "Outgoing") return <Badge variant="outline" className="text-purple-600"><Phone className="inline h-4 w-4 mr-1 rotate-180" />Kimenő</Badge>
     return <Badge variant="outline">Ismeretlen</Badge>
   }
