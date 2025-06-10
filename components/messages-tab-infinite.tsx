@@ -187,49 +187,57 @@ export function MessagesTabInfinite({}: MessagesTabInfiniteProps) {
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-200px)] bg-[#f7f8fa] rounded-lg border">
+      <div className="flex gap-4 h-[calc(100vh-200px)]">
         {/* Sidebar */}
-        <aside className="w-80 border-r bg-white flex flex-col h-full min-h-0">
-          <div className="px-6 py-4 border-b bg-white">
+        <aside className="w-80 flex flex-col h-full min-h-0 bg-background rounded-xl shadow-sm border overflow-hidden">
+          <div className="px-6 py-4 bg-muted border-b">
             <span className="font-semibold text-lg">Összes jelentkező</span>
           </div>
           <ScrollArea className="flex-1 min-h-0">
             {isLoadingUsers ? (
-              <div className="p-4 space-y-2">
+              <div className="p-4 space-y-3">
                 {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full rounded" />
+                  <Skeleton key={i} className="h-16 w-full rounded-xl" />
                 ))}
               </div>
             ) : usersError ? (
-              <div className="p-4 text-red-500">A jelentkezők betöltése sikertelen</div>
+              <div className="p-4 text-red-500 text-center">A jelentkezők betöltése sikertelen</div>
             ) : users.length === 0 ? (
-              <div className="flex h-40 flex-col items-center justify-center p-4 text-center">
-                <MessageSquare className="mb-2 h-8 w-8 text-muted-foreground" />
+              <div className="flex h-40 flex-col items-center justify-center p-6 text-center">
+                <div className="bg-muted rounded-full p-3 mb-3">
+                  <MessageSquare className="h-6 w-6 text-muted-foreground" />
+                </div>
                 <p className="text-sm font-medium">Nincs találat</p>
-                <p className="text-xs text-muted-foreground">Próbáljon meg más keresési kifejezést használni</p>
+                <p className="text-xs text-muted-foreground mt-1">Próbáljon meg más keresési kifejezést használni</p>
               </div>
             ) : (
-              <ul className="divide-y">
+                              <div className="p-2 space-y-1">
                 {users.map(user => (
-                  <li
+                  <div
                     key={user.applicantId}
-                    className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors ${
-                      selectedApplicantId === user.applicantId ? "bg-muted/50" : ""
+                    className={`flex items-center gap-3 p-3 mx-2 rounded-lg cursor-pointer transition-colors ${
+                      selectedApplicantId === user.applicantId 
+                        ? "bg-muted" 
+                        : "hover:bg-muted/50"
                     }`}
                     onClick={() => setSelectedApplicantId(user.applicantId)}
                   >
-                    <Avatar className="h-9 w-9">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${user.name?.charAt(0) || 'U'}`} />
-                      <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
+                      <AvatarFallback>
+                        {user.name?.charAt(0) || 'U'}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="truncate font-medium text-base">{user.name || 'Unknown User'}</span>
-                        <Badge className="ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-semibold" variant="secondary">2</Badge>
+                        <span className="truncate font-medium">{user.name || 'Unknown User'}</span>
+                        <Badge variant="secondary" className="ml-2 px-2 py-0.5 text-xs">
+                          2
+                        </Badge>
                       </div>
-                      <span className="truncate text-xs text-muted-foreground">{user.email || 'No email'}</span>
+                      <span className="truncate text-xs text-muted-foreground mt-0.5 block">{user.email || 'No email'}</span>
                     </div>
-                  </li>
+                  </div>
                 ))}
                 {hasMoreUsers && (
                   <div className="p-4 text-center">
@@ -244,26 +252,30 @@ export function MessagesTabInfinite({}: MessagesTabInfiniteProps) {
                     </Button>
                   </div>
                 )}
-              </ul>
+              </div>
             )}
           </ScrollArea>
         </aside>
 
         {/* Main Chat Area */}
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col bg-background rounded-xl shadow-sm border overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
+          <div className="flex items-center justify-between px-6 py-4 bg-muted border-b">
             <div className="flex items-center gap-4">
               <Avatar className="h-12 w-12">
-                <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${selectedUser?.name?.charAt(0) || 'U'}`} />
-                <AvatarFallback>{selectedUser?.name?.charAt(0) || 'U'}</AvatarFallback>
+                <AvatarImage src={`/placeholder.svg?height=48&width=48&text=${selectedUser?.name?.charAt(0) || 'U'}`} />
+                <AvatarFallback>
+                  {selectedUser?.name?.charAt(0) || 'U'}
+                </AvatarFallback>
               </Avatar>
               <div>
-                <div className="font-semibold text-lg">{selectedUser?.name || 'Válasszon egy jelentkezőt'}</div>
+                <div className="font-semibold text-lg">
+                  {selectedUser?.name || 'Válasszon egy jelentkezőt'}
+                </div>
                 <div className="text-sm text-muted-foreground">{selectedUser?.email || ''}</div>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {selectedUser && (
                 <Button 
                   variant="outline" 
@@ -274,8 +286,8 @@ export function MessagesTabInfinite({}: MessagesTabInfiniteProps) {
                 </Button>
               )}
               {selectedApplicantId && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">AI válasz</span>
+                <div className="flex items-center gap-3 px-3 py-2 bg-background rounded-lg border">
+                  <span className="text-sm font-medium">AI válasz</span>
                   <Switch
                     checked={currentAiResponse}
                     onCheckedChange={() => toggleAiResponses(selectedApplicantId)}
@@ -287,21 +299,36 @@ export function MessagesTabInfinite({}: MessagesTabInfiniteProps) {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto bg-[#f7f8fa] p-6">
+          <div className="flex-1 overflow-y-auto bg-muted/30 p-6">
             {!selectedApplicantId ? (
               <div className="flex h-full items-center justify-center">
-                <p className="text-muted-foreground">Válasszon egy jelentkezőt a beszélgetések megtekintéséhez</p>
+                <div className="text-center">
+                  <div className="bg-muted rounded-full p-4 mb-4 w-fit mx-auto">
+                    <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground">Válasszon egy jelentkezőt a beszélgetések megtekintéséhez</p>
+                </div>
               </div>
             ) : isLoadingMessages ? (
               <div className="flex h-full items-center justify-center">
-                <p>Betöltés...</p>
+                <div className="text-center">
+                  <div className="bg-muted rounded-full p-4 mb-4 w-fit mx-auto animate-pulse">
+                    <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground">Betöltés...</p>
+                </div>
               </div>
             ) : messagesError ? (
-              <div className="flex h-full items-center justify-center text-red-500">
-                A beszélgetések betöltése sikertelen
+              <div className="flex h-full items-center justify-center">
+                <div className="text-center">
+                  <div className="bg-destructive/10 rounded-full p-4 mb-4 w-fit mx-auto">
+                    <MessageSquare className="h-8 w-8 text-destructive" />
+                  </div>
+                  <p className="text-destructive">A beszélgetések betöltése sikertelen</p>
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col min-h-full space-y-4">
+              <div className="flex flex-col min-h-full space-y-6">
                 {hasMoreMessages && (
                   <div className="text-center">
                     <Button
@@ -320,23 +347,27 @@ export function MessagesTabInfinite({}: MessagesTabInfiniteProps) {
                     className={`flex ${message.role === 'user' ? 'justify-start' : 'justify-end'}`}
                   >
                     <div className={`max-w-[70%] flex flex-col ${message.role === 'user' ? '' : 'items-end'}`}>
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-2">
                         {message.role === 'user' ? (
-                          <Avatar className="h-7 w-7">
-                            <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${selectedUser?.name?.charAt(0) || 'U'}`} />
-                            <AvatarFallback>{selectedUser?.name?.charAt(0) || 'U'}</AvatarFallback>
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={`/placeholder.svg?height=24&width=24&text=${selectedUser?.name?.charAt(0) || 'U'}`} />
+                            <AvatarFallback className="text-xs">
+                              {selectedUser?.name?.charAt(0) || 'U'}
+                            </AvatarFallback>
                           </Avatar>
                         ) : (
-                          <Bot className="h-5 w-5 text-primary" />
+                          <div className="bg-primary rounded-full p-1">
+                            <Bot className="h-4 w-4 text-primary-foreground" />
+                          </div>
                         )}
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
                           {new Date(message.timestamp).toLocaleString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                       <div
-                        className={`rounded-xl px-4 py-3 text-sm whitespace-pre-wrap break-words shadow-sm ${
+                        className={`rounded-lg px-4 py-3 text-sm whitespace-pre-wrap break-words ${
                           message.role === 'user'
-                            ? 'bg-white text-foreground border'
+                            ? 'bg-background text-foreground border'
                             : 'bg-primary text-primary-foreground'
                         }`}
                       >
@@ -348,8 +379,11 @@ export function MessagesTabInfinite({}: MessagesTabInfiniteProps) {
                 {messages.length === 0 && selectedApplicantId && (
                   <div className="flex h-full items-center justify-center p-4 text-center">
                     <div>
-                      <MessageSquare className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                      <div className="bg-muted rounded-full p-4 mb-4 w-fit mx-auto">
+                        <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                      </div>
                       <p className="text-sm font-medium">Még nincsenek üzenetek</p>
+                      <p className="text-xs text-muted-foreground mt-1">A beszélgetés itt fog megjelenni</p>
                     </div>
                   </div>
                 )}

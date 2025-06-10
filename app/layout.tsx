@@ -8,6 +8,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Metadata } from 'next'
 import { Providers } from "./providers"
 import { huHU } from '@clerk/localizations'
+import { Toaster } from "@/components/ui/sonner"
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -47,6 +48,7 @@ export default function RootLayout({
                 </div>
               </SidebarProvider>
             </ThemeProvider>
+            <Toaster />
           </Providers>
           <script>
             {`

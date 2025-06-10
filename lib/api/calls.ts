@@ -2,6 +2,12 @@ import { Call } from "@/types/call"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
+export interface OutboundCallRequest {
+  first_message: string;
+  number: string;
+  prompt: string;
+}
+
 export const callsApi = {
   getCalls: async (
     page: number = 1,
@@ -60,5 +66,21 @@ export const callsApi = {
     if (!response.ok) {
       throw new Error("Failed to delete call")
     }
+  },
+
+  makeOutboundCall: async (callData: OutboundCallRequest): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/twilio/outbound-call`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(callData),
+    });
+    
+    if (!response.ok) {
+      throw new Error("Failed to make outbound call");
+    }
+    
+    return response.json();
   },
 } 
