@@ -69,7 +69,7 @@ export const callsApi = {
   },
 
   makeOutboundCall: async (callData: OutboundCallRequest): Promise<any> => {
-    const response = await fetch(`${API_BASE_URL}/twilio/outbound-call`, {
+    const response = await fetch('https://app-fs80.onrender.com/twilio/outbound-call', {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

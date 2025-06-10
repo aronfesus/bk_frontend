@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -57,6 +58,7 @@ const applicantFormSchema = z.object({
 type ApplicantFormValues = z.infer<typeof applicantFormSchema>
 
 export function ApplicantsTab() {
+  const router = useRouter()
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [totalApplicants, setTotalApplicants] = useState(0);
@@ -68,7 +70,6 @@ export function ApplicantsTab() {
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null)
-  const [showApplicantDetails, setShowApplicantDetails] = useState(false)
   const queryClient = useQueryClient()
 
   // Reset page to 1 when any filter changes
@@ -82,8 +83,7 @@ export function ApplicantsTab() {
   }
 
   const viewApplicant = (applicant: Applicant) => {
-    setSelectedApplicant(applicant)
-    setShowApplicantDetails(true)
+    router.push(`/applicants/${applicant.applicantId}`)
   }
 
   const getTypeColor = (type: ApplicantType) => {
@@ -174,12 +174,7 @@ export function ApplicantsTab() {
     }
   }
 
-  // Add a query for job applications
-  const { data: jobApplications = [] } = useQuery({
-    queryKey: ["jobApplications", selectedApplicant?.applicantId],
-    queryFn: () => selectedApplicant ? jobApplicationsApi.getApplicationsByApplicant(selectedApplicant.applicantId) : Promise.resolve([]),
-    enabled: !!selectedApplicant,
-  });
+
 
   // Add mutation for deleting applicant
   const deleteMutation = useMutation({
@@ -187,7 +182,6 @@ export function ApplicantsTab() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applicants"] })
       setShowDeleteDialog(false)
-      setShowApplicantDetails(false)
       toast.success("Applicant deleted")
     },
     onError: (error) => {
@@ -459,129 +453,7 @@ export function ApplicantsTab() {
         </Card>
       )}
 
-      <Dialog open={showApplicantDetails} onOpenChange={setShowApplicantDetails}>
-        {selectedApplicant && (
-          <DialogContent className="sm:max-w-[800px]">
-            <DialogHeader className="flex flex-row items-center justify-between">
-              <div>
-                <DialogTitle>Jelentkező adatai</DialogTitle>
-                <DialogDescription>Részletes információk a jelentkezőről.</DialogDescription>
-              </div>
 
-            </DialogHeader>
-            
-            <div className="grid gap-6 py-6">
-              <div className="flex items-center gap-6">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={`/placeholder.svg?height=80&width=80&text=${selectedApplicant.name.charAt(0)}`} />
-                  <AvatarFallback>{selectedApplicant.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-2xl font-bold mb-1">{selectedApplicant.name}</h3>
-                  <p className="text-muted-foreground text-lg">{selectedApplicant.email}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge variant="outline" className="flex w-fit items-center gap-1 font-normal text-sm">
-                      <span className={`h-2 w-2 rounded-full ${getTypeColor(selectedApplicant.applicantType)}`}></span>
-                      {selectedApplicant.applicantType}
-                    </Badge>
-                    <Badge variant="outline" className="flex w-fit items-center gap-1 font-normal text-sm">
-                      <span className={`h-2 w-2 rounded-full ${getOriginColor(selectedApplicant.origin)}`}></span>
-                      {selectedApplicant.origin}
-                    </Badge>
-                    {selectedApplicant.hasEKG && (
-                      <Badge variant="outline" className="flex w-fit items-center gap-1 font-normal text-sm">
-                        <span className="h-2 w-2 rounded-full bg-green-600"></span>
-                        EÜ Kiskönyv
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>  
-
-              <div className="space-y-3">
-                <p className="text-base font-bold">Munkák</p>
-                <div className="rounded-lg border p-4">
-                  <div className="space-y-3">
-                    {selectedApplicant.jobs?.map((job: any, index: number) => {
-                      const application = jobApplications.find(app => app.job_id === job.jobId);
-                      return (
-                        <div key={index} className="flex items-center justify-between">
-                          <Badge variant="secondary" className="mr-2 text-sm py-1.5">
-                            {job.title}
-                          </Badge>
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Calendar className="mr-2 h-4 w-4" />
-                            <span>Jenlentkezett: {application ? new Date(application.application_date).toLocaleDateString('hu-HU') : 'N/A'}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <p className="text-base font-bold">Kapcsolat</p>
-                  <div className="space-y-2">
-                    <div className="text-base flex items-center gap-3">
-                      <Mail className="h-5 w-5" />
-                      <span>{selectedApplicant.email}</span>
-                    </div>
-                    <div className="text-base flex items-center gap-3">
-                      <Phone className="h-5 w-5" />
-                      <span>{selectedApplicant.phoneNumber}</span>
-                    </div>
-                    {selectedApplicant.dateOfBirth && (
-                      <div className="text-base flex items-center gap-3">
-                        <Calendar className="h-5 w-5" />
-                        <span>{new Date(selectedApplicant.dateOfBirth).toLocaleDateString('hu-HU')}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <p className="text-base font-bold">Lakhely</p>
-                  <div className="text-base flex items-center gap-3">
-                    <MapPin className="h-5 w-5" />
-                    <span>{selectedApplicant.address}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-between pt-6">
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowEditDialog(true)
-                    }}
-                  >
-                    <Pencil className="mr-2 h-4 w-4" /> Szerkesztés
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowDeleteDialog(true)
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Törlés
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm">
-                    <PhoneCall className="mr-2 h-4 w-4" /> Hívás
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        )}
-      </Dialog>
 
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         {selectedApplicant && (

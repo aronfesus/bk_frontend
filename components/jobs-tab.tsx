@@ -33,7 +33,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 const jobFormSchema = z.object({
   title: z.string().min(3, "A munka megnevezése legalább 3 karakter hosszú kell legyen"),
   description: z.string().min(10, "A munka leírása legalább 10 karakter hosszú kell legyen"),
-  location: z.string().min(2, "A munka helyszínének megadása szükséges"),
+  jobPlace: z.string().min(2, "A munka helyszínének megadása szükséges"),
   type: z.enum([JobType.NORMAL, JobType.STUDENT, JobType.ELDER]),
   salary: z.string().regex(/^\d+$/, "A fizetés szám kell, hogy legyen"),
 })
@@ -51,7 +51,7 @@ export function JobsTab() {
   const [newJob, setNewJob] = useState({
     title: "",
     description: "",
-    location: "",
+    jobPlace: "",
     type: JobType.NORMAL,
     salary: "",
   });
@@ -91,7 +91,7 @@ export function JobsTab() {
     defaultValues: {
       title: "",
       description: "",
-      location: "",
+      jobPlace: "",
       type: JobType.NORMAL,
       salary: "",
     },
@@ -138,7 +138,7 @@ export function JobsTab() {
     createJobMutation.mutate({
       title: data.title,
       description: data.description,
-      jobPlace: data.location,
+      jobPlace: data.jobPlace,
       jobType: data.type,
       salary: data.salary,
     });
@@ -203,7 +203,7 @@ export function JobsTab() {
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="location"
+              name="jobPlace"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Helyszín</FormLabel>
@@ -256,7 +256,7 @@ export function JobsTab() {
     defaultValues: {
       title: newJob.title,
       description: newJob.description,
-      location: newJob.location,
+      jobPlace: newJob.jobPlace,
       type: newJob.type,
       salary: newJob.salary,
     },
@@ -269,7 +269,7 @@ export function JobsTab() {
         updates: {
           title: data.title,
           description: data.description,
-          jobPlace: data.location,
+          jobPlace: data.jobPlace,
           jobType: data.type,
           salary: data.salary,
         },
@@ -284,7 +284,7 @@ export function JobsTab() {
     editForm.reset({
       title: job.title,
       description: job.description,
-      location: job.jobPlace,
+      jobPlace: job.jobPlace,
       type: job.jobType,
       salary: job.salary || "",
     });
@@ -572,7 +572,7 @@ export function JobsTab() {
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={editForm.control}
-                    name="location"
+                    name="jobPlace"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Helyszín</FormLabel>

@@ -112,7 +112,7 @@ export const jobsApi = {
       params.append('status', statusFilter);
     }
 
-    const response = await fetch(`${API_BASE_URL}/jobs?${params.toString()}`, {
+    const response = await fetch(`${API_BASE_URL}/jobs/?${params.toString()}`, {
       credentials: "include",
       headers: defaultHeaders,
     });
