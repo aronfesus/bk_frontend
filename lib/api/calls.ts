@@ -83,4 +83,12 @@ export const callsApi = {
     
     return response.json();
   },
+
+  getRecentCalls: async (limit: number = 3): Promise<Call[]> => {
+    const response = await fetch(`${API_BASE_URL}/calls/recent?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch recent calls");
+    }
+    return response.json();
+  }
 } 

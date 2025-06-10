@@ -147,4 +147,13 @@ export const applicantsApi = {
     if (!response.ok) throw new Error("Failed to fetch applicants");
     return response.json();
   },
+
+  async getRecentApplicants(limit: number = 3): Promise<Applicant[]> {
+    const response = await fetch(`${API_BASE_URL}/applicants/recent?limit=${limit}`, {
+        credentials: "include",
+        headers: defaultHeaders,
+    });
+    if (!response.ok) throw new Error("Failed to fetch recent applicants");
+    return response.json();
+  }
 };

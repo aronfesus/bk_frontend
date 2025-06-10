@@ -1,36 +1,54 @@
 "use client"
 
-import { AvatarFallback } from "@/components/ui/avatar"
-
-import { AvatarImage } from "@/components/ui/avatar"
-
-import { Avatar } from "@/components/ui/avatar"
-
+import { AvatarFallback, AvatarImage, Avatar } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowUpRight, Users, Briefcase, MessageSquare, Mic, Clock } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
+import { SummaryStats, ConversationActivity, ApplicantsByJob } from "@/lib/api/stats"
+import { timeAgo } from "@/lib/utils"
 
-// Mock data for charts
-const conversationData = [
-  { name: "Mon", messages: 40, voice: 25 },
-  { name: "Tue", messages: 30, voice: 20 },
-  { name: "Wed", messages: 45, voice: 30 },
-  { name: "Thu", messages: 55, voice: 35 },
-  { name: "Fri", messages: 60, voice: 40 },
-  { name: "Sat", messages: 35, voice: 15 },
-  { name: "Sun", messages: 25, voice: 10 },
-]
+// TODO: Move these type definitions to the actual type definition files
+// These are created based on the API plan in dashboard-implementation-plan.md
+interface Applicant {
+  id: string;
+  name: string;
+  avatar_url?: string;
+  created_at: string;
+  latest_job_application_title?: string;
+};
 
-const applicantData = [
-  { name: "Software Engineer", value: 45 },
-  { name: "Product Manager", value: 30 },
-  { name: "UX Designer", value: 25 },
-  { name: "Data Analyst", value: 20 },
-  { name: "Marketing", value: 15 },
-]
+interface Message {
+    id: string;
+    content: string;
+    created_at: string;
+    applicant: Applicant;
+};
 
-export function DashboardOverview() {
+interface Call {
+    id: string;
+    summary?: string;
+    created_at: string;
+    applicant: Applicant;
+};
+
+interface DashboardOverviewProps {
+  summaryStats: SummaryStats;
+  conversationActivity: ConversationActivity[];
+  applicantsByJob: ApplicantsByJob[];
+  recentApplicants: Applicant[];
+  recentMessages: Message[];
+  recentCalls: Call[];
+}
+
+export function DashboardOverview({
+  summaryStats,
+  conversationActivity,
+  applicantsByJob,
+  recentApplicants,
+  recentMessages,
+  recentCalls,
+}: DashboardOverviewProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -40,10 +58,10 @@ export function DashboardOverview() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,248</div>
+            <div className="text-2xl font-bold">{summaryStats.total_applicants.current}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-500 flex items-center">
-                +18% <ArrowUpRight className="h-3 w-3 ml-1" />
+                +{summaryStats.total_applicants.change_percent}% <ArrowUpRight className="h-3 w-3 ml-1" />
               </span>{" "}
               elöző hónaphoz képest
             </p>
@@ -55,10 +73,10 @@ export function DashboardOverview() {
             <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{summaryStats.active_jobs.current}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-500 flex items-center">
-                +2 <ArrowUpRight className="h-3 w-3 ml-1" />
+                +{summaryStats.active_jobs.change} <ArrowUpRight className="h-3 w-3 ml-1" />
               </span>{" "}
               elöző hónaphoz képest
             </p>
@@ -70,10 +88,10 @@ export function DashboardOverview() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3,427</div>
+            <div className="text-2xl font-bold">{summaryStats.total_messages.current}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-500 flex items-center">
-                +12% <ArrowUpRight className="h-3 w-3 ml-1" />
+                +{summaryStats.total_messages.change_percent}% <ArrowUpRight className="h-3 w-3 ml-1" />
               </span>{" "}
               elöző hónaphoz képest
             </p>
@@ -85,10 +103,10 @@ export function DashboardOverview() {
             <Mic className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,893</div>
+            <div className="text-2xl font-bold">{summaryStats.total_calls.current}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-500 flex items-center">
-                +8% <ArrowUpRight className="h-3 w-3 ml-1" />
+                +{summaryStats.total_calls.change_percent}% <ArrowUpRight className="h-3 w-3 ml-1" />
               </span>{" "}
               elöző hónaphoz képest
             </p>
@@ -107,17 +125,17 @@ export function DashboardOverview() {
             <Card className="col-span-4">
               <CardHeader>
                 <CardTitle>Üzenet és hívás aktivitás</CardTitle>
-                <CardDescription>Üzenet és hívás aktivitás a main napon</CardDescription>
+                <CardDescription>Üzenet és hívás aktivitás a héten</CardDescription>
               </CardHeader>
               <CardContent className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={conversationData}>
+                  <LineChart data={conversationActivity}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
+                    <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
                     <Line type="monotone" dataKey="messages" stroke="#8884d8" name="Messages" />
-                    <Line type="monotone" dataKey="voice" stroke="#82ca9d" name="Voice" />
+                    <Line type="monotone" dataKey="calls" stroke="#82ca9d" name="Voice" />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -129,12 +147,12 @@ export function DashboardOverview() {
               </CardHeader>
               <CardContent className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={applicantData} layout="vertical">
+                  <BarChart data={applicantsByJob} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={100} />
+                    <YAxis dataKey="job_title" type="category" width={100} />
                     <Tooltip />
-                    <Bar dataKey="value" fill="#8884d8" name="Applicants" />
+                    <Bar dataKey="count" fill="#8884d8" name="Applicants" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -148,19 +166,19 @@ export function DashboardOverview() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-4">
+                  {recentApplicants.map((applicant, index) => (
+                    <div key={`${applicant.id}-${index}`} className="flex items-center gap-4">
                       <Avatar>
-                        <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${i}`} />
-                        <AvatarFallback>U{i}</AvatarFallback>
+                        <AvatarImage src={applicant.avatar_url ?? undefined} />
+                        <AvatarFallback>{applicant.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium">Applicant Name {i}</p>
-                        <p className="text-xs text-muted-foreground">Applied for Software Engineer</p>
+                        <p className="text-sm font-medium">{applicant.name}</p>
+                        <p className="text-xs text-muted-foreground">Applied for {applicant.latest_job_application_title || 'N/A'}</p>
                       </div>
                       <div className="flex items-center text-xs text-muted-foreground">
                         <Clock className="mr-1 h-3 w-3" />
-                        {i}órája
+                        {timeAgo(applicant.created_at)}
                       </div>
                     </div>
                   ))}
@@ -174,21 +192,21 @@ export function DashboardOverview() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-4">
+                  {recentMessages.map((message, index) => (
+                    <div key={`${message.id}-${index}`} className="flex items-center gap-4">
                       <Avatar>
-                        <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${i}`} />
-                        <AvatarFallback>U{i}</AvatarFallback>
+                        <AvatarImage src={message.applicant.avatar_url ?? undefined} />
+                        <AvatarFallback>{message.applicant.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium">User {i}</p>
+                        <p className="text-sm font-medium">{message.applicant.name}</p>
                         <p className="text-xs text-muted-foreground truncate">
-                          I'm interested in the Software Engineer position...
+                          {message.content}
                         </p>
                       </div>
                       <div className="flex items-center text-xs text-muted-foreground">
                         <Clock className="mr-1 h-3 w-3" />
-                        {i * 10}perce
+                        {timeAgo(message.created_at)}
                       </div>
                     </div>
                   ))}
@@ -202,19 +220,19 @@ export function DashboardOverview() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-4">
+                  {recentCalls.map((call, index) => (
+                    <div key={`${call.id}-${index}`} className="flex items-center gap-4">
                       <Avatar>
-                        <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${i}`} />
-                        <AvatarFallback>U{i}</AvatarFallback>
+                        <AvatarImage src={call.applicant.avatar_url ?? undefined} />
+                        <AvatarFallback>{call.applicant.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium">Caller {i}</p>
-                        <p className="text-xs text-muted-foreground">{i + 1} minute call about Product Manager role</p>
+                        <p className="text-sm font-medium">{call.applicant.name}</p>
+                        <p className="text-xs text-muted-foreground">{call.summary || 'N/A'}</p>
                       </div>
                       <div className="flex items-center text-xs text-muted-foreground">
                         <Clock className="mr-1 h-3 w-3" />
-                        {i * 30}perce
+                        {timeAgo(call.created_at)}
                       </div>
                     </div>
                   ))}

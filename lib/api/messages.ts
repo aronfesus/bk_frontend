@@ -15,5 +15,12 @@ export const messagesApi = {
     const response = await fetch(`${API_BASE_URL}/messages/by-applicant/${applicantId}?page=${page}&limit=${limit}`);
     if (!response.ok) throw new Error("Failed to fetch messages");
     return response.json();
+  },
+  getRecentMessages: async (limit: number = 3): Promise<Message[]> => {
+    const response = await fetch(`${API_BASE_URL}/messages/recent?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch recent messages");
+    }
+    return response.json();
   }
 } 
