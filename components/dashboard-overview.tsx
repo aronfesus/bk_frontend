@@ -4,9 +4,25 @@ import { AvatarFallback, AvatarImage, Avatar } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowUpRight, Users, Briefcase, MessageSquare, Mic, Clock } from "lucide-react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 import { SummaryStats, ConversationActivity, ApplicantsByJob } from "@/lib/api/stats"
 import { timeAgo } from "@/lib/utils"
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 
 // TODO: Move these type definitions to the actual type definition files
 // These are created based on the API plan in dashboard-implementation-plan.md
@@ -41,6 +57,21 @@ interface DashboardOverviewProps {
   recentCalls: Call[];
 }
 
+const chartConfig = {
+  messages: {
+    label: "Üzenetek",
+    color: "#3b82f6", // Bright blue
+  },
+  calls: {
+    label: "Hívások",
+    color: "#8b5cf6", // Vibrant purple
+  },
+  count: {
+    label: "Jelentkezők",
+    color: "#06b6d4", // Teal
+  },
+} satisfies ChartConfig
+
 export function DashboardOverview({
   summaryStats,
   conversationActivity,
@@ -52,13 +83,15 @@ export function DashboardOverview({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="transition-transform hover:scale-[1.02] bg-gray-50/60">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Összes jelentkező</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xl font-bold ">Összes jelentkező</CardTitle>
+            <div className="p-2 bg-primary rounded-md">
+              <Users className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{summaryStats.total_applicants.current}</div>
+            <div className="text-3xl font-bold">{summaryStats.total_applicants.current}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-500 flex items-center">
                 +{summaryStats.total_applicants.change_percent}% <ArrowUpRight className="h-3 w-3 ml-1" />
@@ -67,10 +100,12 @@ export function DashboardOverview({
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="transition-transform hover:scale-[1.02] bg-gray-50/60">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Aktív munkák</CardTitle>
-            <Briefcase className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xl font-bold ">Aktív munkák</CardTitle>
+            <div className="p-2 bg-primary rounded-md">
+              <Briefcase className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summaryStats.active_jobs.current}</div>
@@ -82,10 +117,12 @@ export function DashboardOverview({
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="transition-transform hover:scale-[1.02] bg-gray-50/60">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Üzenetek</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xl font-bold ">Üzenetek</CardTitle>
+            <div className="p-2 bg-primary rounded-md">
+              <MessageSquare className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summaryStats.total_messages.current}</div>
@@ -97,10 +134,12 @@ export function DashboardOverview({
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="transition-transform hover:scale-[1.02] bg-gray-50/60">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hívások</CardTitle>
-            <Mic className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xl font-bold ">Hívások</CardTitle>
+            <div className="p-2 bg-primary rounded-md">
+              <Mic className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summaryStats.total_calls.current}</div>
@@ -114,140 +153,166 @@ export function DashboardOverview({
         </Card>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Áttekintés</TabsTrigger>
-          <TabsTrigger value="analytics">Részletes statisztikák</TabsTrigger>
-          <TabsTrigger value="reports">Jelentések</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
-              <CardHeader>
-                <CardTitle>Üzenet és hívás aktivitás</CardTitle>
-                <CardDescription>Üzenet és hívás aktivitás a héten</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={conversationActivity}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="messages" stroke="#8884d8" name="Messages" />
-                    <Line type="monotone" dataKey="calls" stroke="#82ca9d" name="Voice" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Jelentkezők munka szerint</CardTitle>
-                <CardDescription>Jelentkezők eloszlása munka pozíciók szerint</CardDescription>
-              </CardHeader>
-              <CardContent className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={applicantsByJob} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="job_title" type="category" width={100} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#8884d8" name="Applicants" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>Utoljára jelentkezett jelentkezők</CardTitle>
-                <CardDescription>Utoljára jelentkezett jelentkezők</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentApplicants.map((applicant, index) => (
-                    <div key={`${applicant.id}-${index}`} className="flex items-center gap-4">
-                      <Avatar>
-                        <AvatarImage src={applicant.avatar_url ?? undefined} />
-                        <AvatarFallback>{applicant.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium">{applicant.name}</p>
-                        <p className="text-xs text-muted-foreground">Applied for {applicant.latest_job_application_title || 'N/A'}</p>
-                      </div>
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Clock className="mr-1 h-3 w-3" />
-                        {timeAgo(applicant.created_at)}
-                      </div>
-                    </div>
-                  ))}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4 bg-gray-50/60">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold ">Üzenet és hívás aktivitás</CardTitle>
+            <CardDescription>Üzenet és hívás aktivitás a héten</CardDescription>
+          </CardHeader>
+          <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+            <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+              <AreaChart
+                accessibilityLayer
+                data={conversationActivity}
+                margin={{
+                  left: 12,
+                  right: 12,
+                }}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(value) => value.slice(5)}
+                />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                <defs>
+                  <linearGradient id="fillMessages" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-messages)" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="var(--color-messages)" stopOpacity={0.1} />
+                  </linearGradient>
+                  <linearGradient id="fillCalls" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-calls)" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="var(--color-calls)" stopOpacity={0.1} />
+                  </linearGradient>
+                </defs>
+                <Area
+                  dataKey="calls"
+                  type="natural"
+                  fill="url(#fillCalls)"
+                  fillOpacity={0.4}
+                  stroke="var(--color-calls)"
+                  stackId="a"
+                />
+                <Area
+                  dataKey="messages"
+                  type="natural"
+                  fill="url(#fillMessages)"
+                  fillOpacity={0.4}
+                  stroke="var(--color-messages)"
+                  stackId="a"
+                />
+              </AreaChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+        <Card className="col-span-3 bg-gray-50/60">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold ">Jelentkezők munka szerint</CardTitle>
+            <CardDescription className="text-sm">Jelentkezők eloszlása munka pozíciók szerint</CardDescription>
+          </CardHeader>
+          <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+            <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+              <BarChart data={applicantsByJob} layout="vertical" margin={{ left: 20 }}>
+                <XAxis type="number" hide />
+                <YAxis
+                  dataKey="job_title"
+                  type="category"
+                  width={150}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                <Bar dataKey="count" fill="var(--color-messages)" name="Jelentkező" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="bg-gray-50/60">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold ">Legutóbbi jelentkezések</CardTitle>
+            <CardDescription className="text-sm">Utolsó 3 jelentkezés</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentApplicants.map((applicant, index) => (
+                <div key={`${applicant.id}-${index}`} className="flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage src={applicant.avatar_url ?? undefined} />
+                    <AvatarFallback className="bg-primary/50 text-white">{applicant.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-1 bg-gray-50/60 p-2 rounded-md">
+                    <p className="text-sm font-medium">{applicant.name}</p>
+                    <p className="text-xs text-muted-foreground">Jelentkezett a {applicant.latest_job_application_title || 'N/A'} munkára</p>
+                  </div>
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <Clock className="mr-1 h-3 w-3" />
+                    {timeAgo(applicant.created_at)}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Utoljára üzenetet küldő jelentkezők</CardTitle>
-                <CardDescription>Utoljára üzenetet küldő jelentkezők</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentMessages.map((message, index) => (
-                    <div key={`${message.id}-${index}`} className="flex items-center gap-4">
-                      <Avatar>
-                        <AvatarImage src={message.applicant.avatar_url ?? undefined} />
-                        <AvatarFallback>{message.applicant.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium">{message.applicant.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {message.content}
-                        </p>
-                      </div>
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Clock className="mr-1 h-3 w-3" />
-                        {timeAgo(message.created_at)}
-                      </div>
-                    </div>
-                  ))}
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-50/60">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold ">Legutóbbi üzenetek</CardTitle>
+            <CardDescription className="text-sm">Utolsó 3 üzenet</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentMessages.map((message, index) => (
+                <div key={`${message.id}-${index}`} className="flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage src={message.applicant.avatar_url ?? undefined} />
+                    <AvatarFallback className="bg-primary/50 text-white">{message.applicant.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-1 bg-gray-50/60 p-2 rounded-md">
+                    <p className="text-sm font-medium">{message.applicant.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {message.content}
+                    </p>
+                  </div>
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <Clock className="mr-1 h-3 w-3" />
+                    {timeAgo(message.created_at)}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Utoljára hívott jelentkezők</CardTitle>
-                <CardDescription>Utoljára hívott jelentkezők</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentCalls.map((call, index) => (
-                    <div key={`${call.id}-${index}`} className="flex items-center gap-4">
-                      <Avatar>
-                        <AvatarImage src={call.applicant.avatar_url ?? undefined} />
-                        <AvatarFallback>{call.applicant.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium">{call.applicant.name}</p>
-                        <p className="text-xs text-muted-foreground">{call.summary || 'N/A'}</p>
-                      </div>
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Clock className="mr-1 h-3 w-3" />
-                        {timeAgo(call.created_at)}
-                      </div>
-                    </div>
-                  ))}
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-50/60">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold ">Legutóbbi hívások</CardTitle>
+            <CardDescription className="text-sm">Utolsó 3 hívás</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentCalls.map((call, index) => (
+                <div key={`${call.id}-${index}`} className="flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage src={call.applicant.avatar_url ?? undefined} />
+                    <AvatarFallback className="bg-primary/50 text-white">{call.applicant.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-1 bg-gray-50/60 p-2 rounded-md">
+                    <p className="text-sm font-medium">{call.applicant.name}</p>
+                    <p className="text-xs text-muted-foreground">{call.summary || 'N/A'}</p>
+                  </div>
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <Clock className="mr-1 h-3 w-3" />
+                    {timeAgo(call.created_at)}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-        <TabsContent value="analytics" className="h-[400px] flex items-center justify-center text-muted-foreground">
-          Részletes statisztikák itt jelennek meg
-        </TabsContent>
-        <TabsContent value="reports" className="h-[400px] flex items-center justify-center text-muted-foreground">
-          Jelentések itt jelennek meg
-        </TabsContent>
-      </Tabs>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
