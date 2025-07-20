@@ -43,16 +43,27 @@ export function ApplicantCalls({ calls, isLoading, totalCalls }: ApplicantCallsP
     }
   }
 
+  const getHungarianStatus = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'success':
+        return 'Sikeres'
+      case 'failure':
+        return 'Sikertelen'
+      case 'callback_request':
+        return 'Visszahívás'
+      default:
+        return status
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completed':
+      case 'sikeres':
         return 'default'
-      case 'busy':
-        return 'secondary'
-      case 'no-answer':
-        return 'outline'
-      case 'failed':
+      case 'failure':
         return 'destructive'
+      case 'callback_request':
+        return 'secondary'
       default:
         return 'secondary'
     }
@@ -115,7 +126,7 @@ export function ApplicantCalls({ calls, isLoading, totalCalls }: ApplicantCallsP
                       {call.callDirection === 'inbound' ? 'Bejövő hívás' : 'Kimenő hívás'}
                     </p>
                     <Badge variant={getStatusColor(call.status)} className="capitalize text-xs">
-                      {call.status.replace('-', ' ')}
+                      {getHungarianStatus(call.status)}
                     </Badge>
                   </div>
                   

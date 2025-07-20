@@ -11,7 +11,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar"
-import { BarChart3, Briefcase, Users, Share2, MessageSquare, Phone, User, Settings } from "lucide-react"
+import { BarChart3, Briefcase, Users, Share2, MessageSquare, Phone } from "lucide-react"
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -66,30 +66,6 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="pb-6">
-        <SidebarMenu>
-          <SidebarMenuItem className="mb-1 px-2">
-            <SidebarMenuButton
-              asChild
-              className="text-lg py-2.5 rounded-xl transition-all hover:bg-blue-100/50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-300"
-            >
-              <Link href="/account" className="flex items-center">
-                <User className="h-5 w-5" />
-                <span className="ml-2">Account</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem className="px-2">
-            <SidebarMenuButton
-              asChild
-              className="text-lg py-2.5 rounded-xl transition-all hover:bg-blue-100/50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-300"
-            >
-              <Link href="/settings" className="flex items-center">
-                <Settings className="h-5 w-5" />
-                <span className="ml-2">Settings</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   )

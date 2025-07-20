@@ -231,9 +231,6 @@ export function MessagesTabInfinite({}: MessagesTabInfiniteProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className="truncate font-medium">{user.name || 'Unknown User'}</span>
-                        <Badge variant="secondary" className="ml-2 px-2 py-0.5 text-xs">
-                          2
-                        </Badge>
                       </div>
                       <span className="truncate text-xs text-muted-foreground mt-0.5 block">{user.email || 'No email'}</span>
                     </div>
