@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   SidebarProvider,
   Sidebar,
@@ -23,9 +23,112 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { statsApi, SummaryStats, ConversationActivity, ApplicantsByJob } from "@/lib/api/stats"
+import { applicantsApi } from "@/lib/api/applicants"
+import { messagesApi } from "@/lib/api/messages"
+import { callsApi } from "@/lib/api/calls"
+import { Applicant } from "@/types/applicant"
+import { Message } from "@/types/message"
+import { Call } from "@/types/call"
 
 export function DashboardPage() {
   const [activeTab, setActiveTab] = useState("dashboard")
+  
+  // Dashboard data state
+  const [dashboardData, setDashboardData] = useState<{
+    summaryStats: SummaryStats | null
+    conversationActivity: ConversationActivity[]
+    applicantsByJob: ApplicantsByJob[]
+    recentApplicants: Applicant[]
+    recentMessages: Message[]
+    recentCalls: Call[]
+  }>({
+    summaryStats: null,
+    conversationActivity: [],
+    applicantsByJob: [],
+    recentApplicants: [],
+    recentMessages: [],
+    recentCalls: [],
+  })
+
+  // Transform functions to convert API data to dashboard format
+  const transformApplicantForDashboard = (applicant: Applicant) => ({
+    id: applicant.id || applicant.applicantId,
+    applicantId: applicant.applicantId,
+    name: applicant.name,
+    avatar_url: applicant.avatar_url,
+    created_at: applicant.created_at,
+    latest_job_application_title: applicant.latest_job_application_title,
+  })
+
+  const transformMessageForDashboard = (message: Message) => ({
+    id: message.messageId,
+    content: message.text,
+    created_at: message.timestamp,
+    applicant: {
+      id: message.applicantId,
+      name: "Unknown User", // This will need to be populated by the API
+      avatar_url: undefined,
+      created_at: undefined,
+      latest_job_application_title: undefined,
+    },
+  })
+
+  const transformCallForDashboard = (call: Call) => ({
+    id: call.callId,
+    summary: undefined, // This will need to be added to the Call type
+    created_at: call.createdAt,
+    applicant: {
+      id: call.applicantId,
+      name: call.callerName || "Unknown Caller",
+      avatar_url: undefined,
+      created_at: undefined,
+      latest_job_application_title: undefined,
+    },
+  })
+  
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Fetch dashboard data when dashboard tab is active
+  useEffect(() => {
+    if (activeTab === "dashboard") {
+      fetchDashboardData()
+    }
+  }, [activeTab])
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true)
+    try {
+      const [
+        summaryStats,
+        conversationActivity,
+        applicantsByJob,
+        recentApplicants,
+        recentMessages,
+        recentCalls,
+      ] = await Promise.all([
+        statsApi.getSummaryStats(),
+        statsApi.getConversationActivity(),
+        statsApi.getApplicantsByJob(),
+        applicantsApi.getRecentApplicants(3),
+        messagesApi.getRecentMessages(3),
+        callsApi.getRecentCalls(3),
+      ])
+
+      setDashboardData({
+        summaryStats,
+        conversationActivity,
+        applicantsByJob,
+        recentApplicants,
+        recentMessages,
+        recentCalls,
+      })
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <SidebarProvider>
@@ -73,7 +176,22 @@ export function DashboardPage() {
             </div>
           </header>
           <main className="flex-1 overflow-auto p-4 lg:p-6">
-            {activeTab === "dashboard" && <DashboardOverview />}
+            {activeTab === "dashboard" && (
+              isLoading || !dashboardData.summaryStats ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-lg">Loading dashboard...</div>
+                </div>
+              ) : (
+                <DashboardOverview
+                  summaryStats={dashboardData.summaryStats}
+                  conversationActivity={dashboardData.conversationActivity}
+                  applicantsByJob={dashboardData.applicantsByJob}
+                  recentApplicants={dashboardData.recentApplicants.map(transformApplicantForDashboard)}
+                  recentMessages={dashboardData.recentMessages.map(transformMessageForDashboard)}
+                  recentCalls={dashboardData.recentCalls.map(transformCallForDashboard)}
+                />
+              )
+            )}
             {activeTab === "jobs" && <JobsTab />}
             {activeTab === "applicants" && <ApplicantsTab />}
             {activeTab === "integrations" && <IntegrationsTab />}

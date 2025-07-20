@@ -23,38 +23,39 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { Applicant } from "@/types/applicant"
 
-// TODO: Move these type definitions to the actual type definition files
-// These are created based on the API plan in dashboard-implementation-plan.md
-interface Applicant {
-  id: string;
+// Dashboard-specific interfaces that match the expected API response structure
+interface DashboardApplicant {
+  id?: string;
+  applicantId?: string;
   name: string;
   avatar_url?: string;
-  created_at: string;
+  created_at?: string;
   latest_job_application_title?: string;
 };
 
-interface Message {
+interface DashboardMessage {
     id: string;
     content: string;
     created_at: string;
-    applicant: Applicant;
+    applicant: DashboardApplicant;
 };
 
-interface Call {
+interface DashboardCall {
     id: string;
     summary?: string;
     created_at: string;
-    applicant: Applicant;
+    applicant: DashboardApplicant;
 };
 
 interface DashboardOverviewProps {
   summaryStats: SummaryStats;
   conversationActivity: ConversationActivity[];
   applicantsByJob: ApplicantsByJob[];
-  recentApplicants: Applicant[];
-  recentMessages: Message[];
-  recentCalls: Call[];
+  recentApplicants: DashboardApplicant[];
+  recentMessages: DashboardMessage[];
+  recentCalls: DashboardCall[];
 }
 
 const chartConfig = {
@@ -240,7 +241,7 @@ export function DashboardOverview({
           <CardContent>
             <div className="space-y-4">
               {recentApplicants.map((applicant, index) => (
-                <div key={`${applicant.id}-${index}`} className="flex items-center gap-4">
+                <div key={`${applicant.id || applicant.applicantId || index}`} className="flex items-center gap-4">
                   <Avatar>
                     <AvatarImage src={applicant.avatar_url ?? undefined} />
                     <AvatarFallback className="bg-primary/50 text-white">{applicant.name.charAt(0)}</AvatarFallback>
@@ -251,7 +252,7 @@ export function DashboardOverview({
                   </div>
                   <div className="flex items-center text-xs text-muted-foreground">
                     <Clock className="mr-1 h-3 w-3" />
-                    {timeAgo(applicant.created_at)}
+                    {applicant.created_at ? timeAgo(applicant.created_at) : 'N/A'}
                   </div>
                 </div>
               ))}
@@ -266,7 +267,7 @@ export function DashboardOverview({
           <CardContent>
             <div className="space-y-4">
               {recentMessages.map((message, index) => (
-                <div key={`${message.id}-${index}`} className="flex items-center gap-4">
+                <div key={`${message.id || index}`} className="flex items-center gap-4">
                   <Avatar>
                     <AvatarImage src={message.applicant.avatar_url ?? undefined} />
                     <AvatarFallback className="bg-primary/50 text-white">{message.applicant.name.charAt(0)}</AvatarFallback>
@@ -294,7 +295,7 @@ export function DashboardOverview({
           <CardContent>
             <div className="space-y-4">
               {recentCalls.map((call, index) => (
-                <div key={`${call.id}-${index}`} className="flex items-center gap-4">
+                <div key={`${call.id || index}`} className="flex items-center gap-4">
                   <Avatar>
                     <AvatarImage src={call.applicant.avatar_url ?? undefined} />
                     <AvatarFallback className="bg-primary/50 text-white">{call.applicant.name.charAt(0)}</AvatarFallback>

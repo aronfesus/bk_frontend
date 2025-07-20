@@ -14,6 +14,7 @@ export enum ApplicantType {
 
 export interface Applicant {
   applicantId: string;
+  id?: string; // For compatibility with dashboard components
   name: string;
   dateOfBirth?: string;
   email: string;
@@ -25,6 +26,9 @@ export interface Applicant {
   origin: ApplicantOrigin;
   jobs?: Job[]; // Assuming you have a Job type imported
   aiResponse: boolean;
+  avatar_url?: string;
+  created_at?: string;
+  latest_job_application_title?: string;
 }
 
 // This type represents the data needed to create a new applicant
