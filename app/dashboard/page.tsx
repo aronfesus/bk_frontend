@@ -1,3 +1,5 @@
+"use client"
+
 import { AppHeader } from "@/components/app-header"
 import { DashboardOverview } from "@/components/dashboard-overview"
 import { applicantsApi } from "@/lib/api/applicants"
@@ -6,8 +8,9 @@ import { messagesApi } from "@/lib/api/messages"
 import { statsApi } from "@/lib/api/stats"
 import { Suspense } from "react"
 import { DashboardSkeleton } from "@/components/dashboard-skeleton"
+import { useQuery } from "@tanstack/react-query"
 
-export default async function DashboardPage() {
+export default function DashboardPage() {
   return (
     <>
       <AppHeader title="Statisztikák" />
@@ -20,36 +23,47 @@ export default async function DashboardPage() {
   )
 }
 
-async function DashboardData() {
-  try {
-    const [
-      summaryStats,
-      conversationActivity,
-      applicantsByJob,
-      recentApplicants,
-      recentMessages,
-      recentCalls
-    ] = await Promise.all([
-      statsApi.getSummaryStats(),
-      statsApi.getConversationActivity("7d"),
-      statsApi.getApplicantsByJob(),
-      applicantsApi.getRecentApplicants(3),
-      messagesApi.getRecentMessages(3),
-      callsApi.getRecentCalls(3)
-    ])
+function DashboardData() {
+  const { data: summaryStats, isLoading: loadingStats } = useQuery({
+    queryKey: ["summaryStats"],
+    queryFn: () => statsApi.getSummaryStats(),
+  })
 
-    return (
-      <DashboardOverview
-        summaryStats={summaryStats}
-        conversationActivity={conversationActivity}
-        applicantsByJob={applicantsByJob}
-        recentApplicants={recentApplicants as any}
-        recentMessages={recentMessages as any}
-        recentCalls={recentCalls as any}
-      />
-    )
-  } catch (error) {
-    console.error("Failed to load dashboard data:", error)
+  const { data: conversationActivity, isLoading: loadingActivity } = useQuery({
+    queryKey: ["conversationActivity"],
+    queryFn: () => statsApi.getConversationActivity("7d"),
+  })
+
+  const { data: applicantsByJob, isLoading: loadingApplicantsByJob } = useQuery({
+    queryKey: ["applicantsByJob"],
+    queryFn: () => statsApi.getApplicantsByJob(),
+  })
+
+  const { data: recentApplicants, isLoading: loadingApplicants } = useQuery({
+    queryKey: ["recentApplicants"],
+    queryFn: () => applicantsApi.getRecentApplicants(3),
+  })
+
+  const { data: recentMessages, isLoading: loadingMessages } = useQuery({
+    queryKey: ["recentMessages"],
+    queryFn: () => messagesApi.getRecentMessages(3),
+  })
+
+  const { data: recentCalls, isLoading: loadingCalls } = useQuery({
+    queryKey: ["recentCalls"],
+    queryFn: () => callsApi.getRecentCalls(3),
+  })
+
+  const isLoading = loadingStats || loadingActivity || loadingApplicantsByJob || 
+                   loadingApplicants || loadingMessages || loadingCalls
+
+  if (isLoading) {
+    return <DashboardSkeleton />
+  }
+
+  const hasError = !summaryStats || !conversationActivity || !applicantsByJob
+
+  if (hasError) {
     return (
       <div className="flex h-full w-full items-center justify-center flex-col gap-4">
         <svg
@@ -72,5 +86,16 @@ async function DashboardData() {
       </div>
     )
   }
+
+  return (
+    <DashboardOverview
+      summaryStats={summaryStats}
+      conversationActivity={conversationActivity}
+      applicantsByJob={applicantsByJob}
+      recentApplicants={recentApplicants as any}
+      recentMessages={recentMessages as any}
+      recentCalls={recentCalls as any}
+    />
+  )
 }
 
