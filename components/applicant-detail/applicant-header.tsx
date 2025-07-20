@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Pencil, Trash2, PhoneCall } from "lucide-react"
+import { Pencil, Trash2, Mail, Phone, MapPin } from "lucide-react"
 import { Applicant, ApplicantType, ApplicantOrigin } from "@/types/applicant"
 
 interface ApplicantHeaderProps {
@@ -41,54 +41,71 @@ export function ApplicantHeader({ applicant, onEdit, onDelete, isDeleting }: App
     }
   }
 
-  const handleCall = () => {
-    if (applicant.phoneNumber) {
-      window.open(`tel:${applicant.phoneNumber}`)
-    }
-  }
-
   return (
-    <Card className="overflow-hidden shadow-sm border-blue-100 dark:border-blue-900/50">
+    <Card className="overflow-hidden bg-gray-50/60">
       <CardContent className="p-6">
-        <div className="flex flex-col sm:flex-row gap-6 justify-between items-start">
-          <div className="flex items-center gap-6">
-            <Avatar className="h-24 w-24 border-4 border-white dark:border-slate-800 shadow-lg">
-              <AvatarImage src={`https://api.dicebear.com/8.x/initials/svg?seed=${applicant.name}`} />
-              <AvatarFallback className="text-3xl bg-slate-200 dark:bg-slate-700">
-                {applicant.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">{applicant.name}</h1>
-              <p className="text-lg text-muted-foreground">{applicant.email}</p>
+        <div className="flex flex-col lg:flex-row gap-6 justify-between items-start">
+          {/* Left Section - Profile */}
+          <div className="flex flex-col sm:flex-row items-start gap-6 flex-1">
+            <div className="flex items-start gap-6">
+              <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
+                <AvatarImage src={`https://api.dicebear.com/8.x/initials/svg?seed=${applicant.name}`} />
+                <AvatarFallback className="text-3xl bg-primary/50 text-white">
+                  {applicant.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
               
-              <div className="flex flex-wrap items-center gap-2 pt-2">
-                <Badge variant="secondary">{applicant.applicantType}</Badge>
-                <Badge variant="secondary">{applicant.origin}</Badge>
-                {applicant.hasEKG && (
-                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-green-200 dark:border-green-800/60">
-                    EÜ Kiskönyv
-                  </Badge>
-                )}
+              <div className="space-y-3">
+                <div>
+                  <h1 className="text-3xl font-bold text-foreground tracking-tight">
+                    {applicant.name}
+                  </h1>
+                  <p className="text-muted-foreground mt-1">
+                    ID: #{applicant.applicantId}
+                  </p>
+                </div>
+
+                {/* Contact Information */}
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    <span>{applicant.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Phone className="h-4 w-4" />
+                    <span>{applicant.phoneNumber}</span>
+                  </div>
+                  {applicant.address && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      <span>{applicant.address}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2 shrink-0">
-            <Button onClick={onEdit} variant="outline" className="justify-start">
+          {/* Right Section - Actions */}
+          <div className="flex flex-col gap-2 shrink-0 w-full sm:w-auto">
+            <Button 
+              onClick={onEdit} 
+              variant="outline" 
+              className="justify-start"
+            >
               <Pencil className="mr-2 h-4 w-4" />
               Szerkesztés
             </Button>
-            <Button onClick={onDelete} variant="outline" disabled={isDeleting} className="justify-start group">
+            <Button 
+              onClick={onDelete} 
+              variant="outline" 
+              disabled={isDeleting} 
+              className="justify-start group"
+            >
               <Trash2 className="mr-2 h-4 w-4 text-destructive group-hover:text-white transition-colors" />
               <span className="text-destructive group-hover:text-white transition-colors">
                 {isDeleting ? "Törlés..." : "Törlés"}
               </span>
-            </Button>
-            <Button onClick={handleCall} className="bg-blue-600 hover:bg-blue-700 text-white justify-start">
-              <PhoneCall className="mr-2 h-4 w-4" />
-              Hívás
             </Button>
           </div>
         </div>

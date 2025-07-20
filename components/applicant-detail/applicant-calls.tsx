@@ -60,10 +60,10 @@ export function ApplicantCalls({ calls, isLoading, totalCalls }: ApplicantCallsP
 
   if (isLoading) {
     return (
-      <Card className="shadow-sm">
-        <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-3 text-lg font-semibold text-slate-800 dark:text-slate-100">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+      <Card className="bg-gray-50/60">
+        <CardHeader className="border-b bg-gray-200/40">
+          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+            <Phone className="h-4 w-4 text-muted-foreground" />
             Hívásnapló
           </CardTitle>
         </CardHeader>
@@ -84,10 +84,10 @@ export function ApplicantCalls({ calls, isLoading, totalCalls }: ApplicantCallsP
   }
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="border-b">
-        <CardTitle className="flex items-center gap-3 text-lg font-semibold text-slate-800 dark:text-slate-100">
-          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+    <Card className="bg-gray-50/60">
+      <CardHeader className="border-b -mt-6 p-4 bg-gray-200/40">
+        <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+          <Phone className="h-4 w-4 text-muted-foreground" />
           Hívásnapló ({totalCalls})
         </CardTitle>
       </CardHeader>

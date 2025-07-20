@@ -55,10 +55,10 @@ export function ApplicantMessages({ messages: initialMessages, isLoading, totalM
 
   if (isLoading) {
     return (
-      <Card className="shadow-sm">
-        <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-3 text-lg font-semibold text-slate-800 dark:text-slate-100">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+      <Card className="bg-gray-50/60">
+        <CardHeader className="border-b -mt-6 p-4 bg-gray-200/40">
+          <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+            <MessageCircle className="h-4 w-4 text-muted-foreground" />
             Üzenetek
           </CardTitle>
         </CardHeader>
@@ -78,10 +78,10 @@ export function ApplicantMessages({ messages: initialMessages, isLoading, totalM
   }
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="border-b">
-        <CardTitle className="flex items-center gap-3 text-lg font-semibold text-slate-800 dark:text-slate-100">
-          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+    <Card className="bg-gray-50/60">
+      <CardHeader className="border-b -mt-6 p-4 bg-gray-200/40">
+        <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+          <MessageCircle className="h-4 w-4 text-muted-foreground" />
           Üzenetek ({totalMessages})
         </CardTitle>
       </CardHeader>

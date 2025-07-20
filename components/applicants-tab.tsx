@@ -399,18 +399,18 @@ export function ApplicantsTab() {
         {filteredApplicants.map((applicant) => (
           <Card
             key={applicant.applicantId}
-            className="overflow-hidden cursor-pointer transition-all hover:shadow-md hover:border-primary/50"
+            className="overflow-hidden cursor-pointer transition-all hover:shadow-md hover:border-primary/50 bg-gray-50/60"
             onClick={() => viewApplicant(applicant)}
           >
             <CardHeader className="pb-0">
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between bg-gray-200/40 p-4 -m-6">
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${applicant.name.charAt(0)}`} />
-                    <AvatarFallback>{applicant.name.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/50 text-white">{applicant.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-base">{applicant.name}</CardTitle>
+                    <CardTitle className="text-lg font-bold">{applicant.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">{applicant.email}</p>
                   </div>
                 </div>

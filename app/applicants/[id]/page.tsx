@@ -19,7 +19,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { ArrowLeft } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowLeft, FileText, MessageSquare, Phone } from "lucide-react"
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -179,14 +180,21 @@ export default function ApplicantDetailPage() {
 
   if (applicantError) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Hiba történt</h1>
-          <p className="text-muted-foreground mt-2">A jelentkező adatai nem tölthetők be.</p>
-          <Button onClick={handleBack} className="mt-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Vissza a listához
-          </Button>
+      <div className="min-h-screen bg-gray-50/30 flex items-center justify-center">
+        <div className="container mx-auto px-4 py-8 max-w-md">
+          <Card className="bg-gray-50/60">
+            <CardContent className="p-8 text-center">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-red-500"></div>
+              </div>
+              <h1 className="text-xl font-semibold text-red-600 mb-2">Hiba történt</h1>
+              <p className="text-muted-foreground mb-6">A jelentkező adatai nem tölthetők be.</p>
+              <Button onClick={handleBack}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Vissza a listához
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -194,31 +202,46 @@ export default function ApplicantDetailPage() {
 
   if (isLoadingApplicant) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-24" />
-          <Skeleton className="h-8 w-48" />
+      <div className="min-h-screen bg-gray-50/30">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          <div className="mb-8">
+            <Skeleton className="h-10 w-48" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-32 w-full" />
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <Skeleton className="h-64 w-full" />
+              <div className="xl:col-span-2 space-y-6">
+                <Skeleton className="h-48 w-full" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Skeleton className="h-64 w-full" />
+                  <Skeleton className="h-64 w-full" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <Skeleton className="h-32 w-full" />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-        <Skeleton className="h-96 w-full" />
       </div>
     )
   }
 
   if (!applicant) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Jelentkező nem található</h1>
-          <p className="text-muted-foreground mt-2">A keresett jelentkező nem létezik.</p>
-          <Button onClick={handleBack} className="mt-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Vissza a listához
-          </Button>
+      <div className="min-h-screen bg-gray-50/30 flex items-center justify-center">
+        <div className="container mx-auto px-4 py-8 max-w-md">
+          <Card className="bg-gray-50/60">
+            <CardContent className="p-8 text-center">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-gray-400"></div>
+              </div>
+              <h1 className="text-xl font-semibold mb-2">Jelentkező nem található</h1>
+              <p className="text-muted-foreground mb-6">A keresett jelentkező nem létezik.</p>
+              <Button onClick={handleBack}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Vissza a listához
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -226,103 +249,140 @@ export default function ApplicantDetailPage() {
 
   return (
     <>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Navigation */}
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Vissza
-          </Button>
-        </div>
-  
-        {/* Header Section */}
-        <ApplicantHeader 
-          applicant={applicant} 
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          isDeleting={deleteMutation.isPending}
-        />
-  
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Basic Information */}
-          <ApplicantBasicInfo applicant={applicant} />
-  
-          {/* Job Applications */}
-          <ApplicantJobs 
-            jobApplications={jobApplications}
-            allJobs={allJobsData?.jobs || []}
-            isLoading={isLoadingJobs}
-          />
-        </div>
-  
-        {/* Communication History */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {/* Call History */}
-          <ApplicantCalls 
-            calls={callsData?.calls || []}
-            isLoading={isLoadingCalls}
-            totalCalls={callsData?.total || 0}
-          />
-  
-          {/* Message History */}
-          <ApplicantMessages 
-            messages={messagesData?.messages || []}
-            isLoading={isLoadingMessages}
-            totalMessages={messagesData?.total || 0}
-            applicantId={applicantId}
-          />
+      <div className="min-h-screen bg-gray-50/30">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          {/* Navigation Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <Button 
+                variant="ghost" 
+                onClick={handleBack}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Vissza a jelentkezőkhöz
+              </Button>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="space-y-6">
+            {/* Header Section */}
+            <ApplicantHeader 
+              applicant={applicant} 
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              isDeleting={deleteMutation.isPending}
+            />
+
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {/* Left Column - Personal Information */}
+              <div className="xl:col-span-1">
+                <ApplicantBasicInfo applicant={applicant} />
+              </div>
+
+              {/* Right Column - Activity & Communication */}
+              <div className="xl:col-span-2 space-y-6">
+                {/* Job Applications Section */}
+                <ApplicantJobs 
+                  jobApplications={jobApplications}
+                  allJobs={allJobsData?.jobs || []}
+                  isLoading={isLoadingJobs}
+                />
+
+                {/* Communication History Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Call History */}
+                  <ApplicantCalls 
+                    calls={callsData?.calls || []}
+                    isLoading={isLoadingCalls}
+                    totalCalls={callsData?.total || 0}
+                  />
+
+                  {/* Message History */}
+                  <ApplicantMessages 
+                    messages={messagesData?.messages || []}
+                    isLoading={isLoadingMessages}
+                    totalMessages={messagesData?.total || 0}
+                    applicantId={applicantId}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Edit Dialog */}
+      {/* Clean Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Jelentkező szerkesztése</DialogTitle>
-            <DialogDescription>A jelentkező adatainak módosítása.</DialogDescription>
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="text-xl font-semibold">Jelentkező szerkesztése</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              A jelentkező adatainak módosítása.
+            </DialogDescription>
           </DialogHeader>
           <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(handleUpdate)} className="grid gap-4 py-4">
-              <FormField
-                control={editForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Név</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={editForm.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefonszám</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <form onSubmit={editForm.handleSubmit(handleUpdate)} className="space-y-4 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Név</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefonszám</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="dateOfBirth"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Születési dátum</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={editForm.control}
                 name="address"
@@ -336,20 +396,8 @@ export default function ApplicantDetailPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={editForm.control}
-                name="dateOfBirth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Születési dátum</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={editForm.control}
                   name="applicantType"
@@ -399,11 +447,12 @@ export default function ApplicantDetailPage() {
                   )}
                 />
               </div>
+
               <FormField
                 control={editForm.control}
                 name="hasEKG"
                 render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2">
+                  <FormItem className="flex items-center space-x-3 space-y-0">
                     <FormControl>
                       <input
                         type="checkbox"
@@ -412,16 +461,26 @@ export default function ApplicantDetailPage() {
                         className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                       />
                     </FormControl>
-                    <FormLabel>Rendelkezik EÜ Kiskönyvvel</FormLabel>
+                    <FormLabel className="cursor-pointer">
+                      Rendelkezik EÜ Kiskönyvvel
+                    </FormLabel>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <div className="flex justify-end gap-2 mt-4">
-                <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowEditDialog(false)}
+                >
                   Mégsem
                 </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
+                <Button 
+                  type="submit" 
+                  disabled={updateMutation.isPending}
+                >
                   {updateMutation.isPending ? "Mentés..." : "Mentés"}
                 </Button>
               </div>
